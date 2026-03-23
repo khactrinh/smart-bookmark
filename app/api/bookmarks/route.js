@@ -2,36 +2,41 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Bookmark from '@/models/Bookmark';
 import { fetchMetadata } from '@/lib/scraper';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
-// [POST] THÊM BOOKMARK MỚI
+// Middleware kiểm tra auth
+async function checkAuth() {
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("Unauthorized");
+    return session.user.email;
+}
+
 export async function POST(req) {
     try {
+        const userEmail = await checkAuth(); // Lấy email người dùng
         await connectDB();
-        const { url, category, tags } = await req.json();
 
-        // Tự động nhận diện Title, Image, Description
+        const { url, category, tags } = await req.json();
         const metadata = await fetchMetadata(url);
 
         const newBookmark = await Bookmark.create({
-            url,
-            category,
-            tags,
+            url, category, tags,
             title: metadata.title,
             description: metadata.description,
             image: metadata.image,
+            userEmail, // Gắn email người dùng vào record
         });
 
         return NextResponse.json({ success: true, data: newBookmark }, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        return NextResponse.json({ success: false, error: error.message }, { status: error.message === "Unauthorized" ? 401 : 500 });
     }
 }
 
-// [GET] LẤY DANH SÁCH (CÓ FILTER, PHÂN TRANG, RANDOM)
-// Thay thế hàm GET hiện tại bằng đoạn code sau:
-
 export async function GET(req) {
     try {
+        const userEmail = await checkAuth(); // Lấy email người dùng
         await connectDB();
         const { searchParams } = new URL(req.url);
 
@@ -39,18 +44,18 @@ export async function GET(req) {
         const limit = parseInt(searchParams.get('limit')) || 10;
         const category = searchParams.get('category');
         const tag = searchParams.get('tag');
-        const search = searchParams.get('search'); // Lấy từ khóa tìm kiếm
+        const search = searchParams.get('search');
         const isRandom = searchParams.get('random') === 'true';
 
-        // Tạo bộ lọc
-        let filter = {};
+        // BỘ LỌC CỐ ĐỊNH: Chỉ lấy bookmark của user đang đăng nhập
+        let filter = { userEmail };
+
         if (category) filter.category = category;
         if (tag) filter.tags = { $in: [tag] };
 
-        // Thêm logic tìm kiếm (Tìm trong Title, Description, URL hoặc Tags)
         if (search) {
             filter.$or = [
-                { title: { $regex: search, $options: 'i' } }, // 'i' là không phân biệt hoa/thường
+                { title: { $regex: search, $options: 'i' } },
                 { description: { $regex: search, $options: 'i' } },
                 { url: { $regex: search, $options: 'i' } },
                 { tags: { $regex: search, $options: 'i' } }
@@ -68,19 +73,15 @@ export async function GET(req) {
             total = bookmarks.length;
         } else {
             const skip = (page - 1) * limit;
-            bookmarks = await Bookmark.find(filter)
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit);
+            bookmarks = await Bookmark.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit);
             total = await Bookmark.countDocuments(filter);
         }
 
         return NextResponse.json({
-            success: true,
-            data: bookmarks,
+            success: true, data: bookmarks,
             pagination: { total, page, pages: Math.ceil(total / limit) }
         });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        return NextResponse.json({ success: false, error: error.message }, { status: error.message === "Unauthorized" ? 401 : 500 });
     }
 }
