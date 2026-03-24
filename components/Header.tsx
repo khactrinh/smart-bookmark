@@ -189,7 +189,7 @@ export default function Header({
 
         {/* LEFT: Logo */}
         <h1 className="text-xl font-bold text-gray-800 tracking-tight">
-          🚀 LinkVault
+          🚀 LinkHub
         </h1>
 
         {/* CENTER: Search */}
@@ -248,8 +248,8 @@ export default function Header({
           <button
             onClick={() => setIsRandom(!isRandom)}
             className={`p-2 rounded-md ${isRandom
-                ? "bg-purple-600 text-white"
-                : "bg-gray-100 hover:bg-gray-200"
+              ? "bg-purple-600 text-white"
+              : "bg-gray-100 hover:bg-gray-200"
               }`}
           >
             <Shuffle size={16} />
