@@ -1,15 +1,7 @@
 "use client";
 import { Trash2 } from "lucide-react"; // Import thêm icon
+import { Bookmark } from "@/types/bookmark";
 
-type Bookmark = {
-  _id: string;
-  title: string;
-  url: string;
-  description: string;
-  category: string;
-  tags: string[];
-  image: string;
-};
 
 type Props = {
   bm: Bookmark;

@@ -1,11 +1,8 @@
 "use client";
 import BookmarkCard from "./BookmarkCard";
+import { Bookmark } from "@/types/bookmark";
 
-type Bookmark = {
-  _id: string;
-  title: string;
-  url: string;
-};
+
 
 type Props = {
   bookmarks: Bookmark[];
