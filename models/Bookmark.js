@@ -10,4 +10,9 @@ const BookmarkSchema = new mongoose.Schema({
     userEmail: { type: String, required: true },
 }, { timestamps: true }); // Tự động tạo createdAt (lưu theo ngày tháng)
 
+BookmarkSchema.index({ userEmail: 1 });
+BookmarkSchema.index({ category: 1 });
+BookmarkSchema.index({ tags: 1 });
+BookmarkSchema.index({ createdAt: -1 });
+
 export default mongoose.models.Bookmark || mongoose.model('Bookmark', BookmarkSchema);

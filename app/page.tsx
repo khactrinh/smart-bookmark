@@ -11,11 +11,13 @@ import BookmarkList from "@/components/BookmarkList";
 import Pagination from "@/components/Pagination";
 import AddBookmarkModal from "@/components/AddBookmarkModal";
 import ManageCategoriesModal from "@/components/ManageCategoriesModal";
+import { Bookmark } from "@/types/bookmark";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function BookmarkApp() {
   const { data: session, status } = useSession();
 
-  const [bookmarks, setBookmarks] = useState([]);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [viewMode, setViewMode] = useState("grid");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -28,6 +30,16 @@ export default function BookmarkApp() {
 
   const [categoriesList, setCategoriesList] = useState([]);
   const [isManageCatOpen, setIsManageCatOpen] = useState(false);
+
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
+  //const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  //const [editingBookmark, setEditingBookmark] = useState(null);
+
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Kỹ thuật Debounce cho Search
   useEffect(() => {
@@ -69,16 +81,46 @@ export default function BookmarkApp() {
     }
   };
 
-  const handleDeleteBookmark = async (id: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xoá bookmark này?")) return;
-    await fetch(`/api/bookmarks/${id}`, { method: "DELETE" });
-    fetchBookmarks(); // Reload lại danh sách
+  // const handleDeleteBookmark = async (id: string) => {
+  //   if (!confirm("Bạn có chắc chắn muốn xoá bookmark này?")) return;
+  //   await fetch(`/api/bookmarks/${id}`, { method: "DELETE" });
+  //   fetchBookmarks(); // Reload lại danh sách
+  // };
+
+  const handleDeleteBookmark = (id: string) => {
+    setSelectedId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedId) return;
+
+    try {
+      setIsDeleting(true);
+
+      await fetch(`/api/bookmarks/${selectedId}`, {
+        method: "DELETE",
+      });
+
+      fetchBookmarks();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDeleting(false);
+      setConfirmOpen(false);
+      setSelectedId(null);
+    }
   };
 
   useEffect(() => {
     fetchBookmarks();
-    fetchCategories();
   }, [page, isRandom, category, debouncedSearch, session]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [session]);
+
+
 
   // Xử lý các trạng thái đăng nhập
   if (status === "loading") {
@@ -120,6 +162,10 @@ export default function BookmarkApp() {
           viewMode={viewMode}
           debouncedSearch={debouncedSearch}
           onDelete={handleDeleteBookmark}
+          onEdit={(bm) => {
+            setEditingBookmark(bm);
+            setIsModalOpen(true);
+          }}
         />
 
         {/* 3. Phân trang (Ẩn khi random hoặc không có dữ liệu) */}
@@ -131,10 +177,16 @@ export default function BookmarkApp() {
       {/* 4. Modal thêm Bookmark (Chỉ hiển thị khi isOpen = true) */}
       <AddBookmarkModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingBookmark(null);
+        }}
         onSuccess={fetchBookmarks}
         categoriesList={categoriesList}
+        editingBookmark={editingBookmark}
       />
+
+
 
       <ManageCategoriesModal
         isOpen={isManageCatOpen}
@@ -145,6 +197,17 @@ export default function BookmarkApp() {
           fetchBookmarks();
         }}
       />
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        title="Xoá Bookmark"
+        description="Bạn có chắc chắn muốn xoá bookmark này? Hành động này không thể hoàn tác."
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+        loading={isDeleting}
+      />
+
+
     </div>
   );
 }

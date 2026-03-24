@@ -1,19 +1,87 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
+
+
+type Props = {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  categoriesList: any[];
+  editingBookmark?: any; // 👈 thêm
+};
 
 export default function AddBookmarkModal({
   isOpen,
   onClose,
   onSuccess,
   categoriesList,
-}: any) {
+  editingBookmark,
+}: Props) {
   const [newUrl, setNewUrl] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [newTags, setNewTags] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [customTitle, setCustomTitle] = useState("");
+  const [customDescription, setCustomDescription] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const isEditMode = !!editingBookmark;
+
+  useEffect(() => {
+    //if (!isOpen) return;
+
+    if (!editingBookmark) {
+      // 👉 ADD MODE → reset sạch
+      setNewUrl("");
+      setCustomTitle("");
+      setCustomDescription("");
+      setNewCategory("");
+      setNewTags("");
+    } else {
+      // 👉 EDIT MODE → fill data
+      setNewUrl(editingBookmark.url || "");
+      setCustomTitle(editingBookmark.title || "");
+      setCustomDescription(editingBookmark.description || "");
+      setNewCategory(editingBookmark.category || "");
+      setNewTags(editingBookmark.tags?.join(", ") || "");
+    }
+  }, [isOpen, editingBookmark]);
+
+  useEffect(() => {
+    if (editingBookmark) return;
+
+    if (!newUrl || !newUrl.startsWith("http") || newUrl.length < 10) return;
+
+
+    const timer = setTimeout(async () => {
+      try {
+        setPreviewLoading(true);
+
+        const res = await fetch("/api/preview", {
+          method: "POST",
+          body: JSON.stringify({ url: newUrl }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          setCustomTitle(data.data.title || "");
+          setCustomDescription(data.data.description || "");
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [newUrl]);
+
   if (!isOpen) return null;
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,13 +94,21 @@ export default function AddBookmarkModal({
       .filter((tag) => tag !== "");
 
     try {
-      const res = await fetch("/api/bookmarks", {
-        method: "POST",
+      const endpoint = isEditMode
+        ? `/api/bookmarks/${editingBookmark._id}`
+        : "/api/bookmarks";
+
+      const method = isEditMode ? "PUT" : "POST";
+
+      const res = await fetch(endpoint, {
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: newUrl,
           category: newCategory || "Uncategorized",
           tags: tagsArray,
+          title: customTitle,
+          description: customDescription,
         }),
       });
       const data = await res.json();
@@ -57,7 +133,7 @@ export default function AddBookmarkModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center p-5 border-b">
-          <h2 className="text-xl font-bold text-gray-800">Thêm Bookmark</h2>
+          <h2 className="text-xl font-bold text-gray-800">{isEditMode ? "Chỉnh sửa Bookmark" : "Thêm Bookmark"}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-700 bg-gray-100 p-1 rounded-full"
@@ -73,6 +149,7 @@ export default function AddBookmarkModal({
             </label>
             <input
               type="url"
+              disabled={isEditMode}
               required
               placeholder="https://youtube.com/..."
               className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-black focus:ring-1 transition-all"
@@ -80,6 +157,27 @@ export default function AddBookmarkModal({
               onChange={(e) => setNewUrl(e.target.value)}
             />
           </div>
+          <div>
+            <label className="text-sm font-medium">Title</label>
+            <input
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Description</label>
+            <textarea
+              value={customDescription}
+              onChange={(e) => setCustomDescription(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+
+          {previewLoading && (
+            <p className="text-xs text-gray-400">Đang lấy preview...</p>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Chủ đề
@@ -122,7 +220,7 @@ export default function AddBookmarkModal({
                 tin...
               </>
             ) : (
-              "Lưu Bookmark"
+              isEditMode ? "Cập nhật" : "Lưu Bookmark"
             )}
           </button>
         </form>

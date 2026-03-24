@@ -3,6 +3,9 @@ import * as cheerio from "cheerio";
 
 export async function fetchMetadata(url: string) {
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000); // max 3s
+
         // =========================
         // 1. TRY SCRAPE (FAST + FREE)
         // =========================

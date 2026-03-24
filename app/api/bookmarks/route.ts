@@ -6,49 +6,65 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 // Middleware kiểm tra auth
-async function checkAuth() {
+async function checkAuth(): Promise<string> {
     const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
-    return session.user.email;
+
+    const email = session?.user?.email;
+
+    if (!email) {
+        throw new Error("Unauthorized");
+    }
+
+    return email;
 }
 
-export async function POST(req) {
+
+export async function POST(req: Request) {
     try {
-        const userEmail = await checkAuth(); // Lấy email người dùng
+        const userEmail = await checkAuth();
         await connectDB();
 
-        const { url, category, tags } = await req.json();
+        const { url, category, tags, title, description } = await req.json();
+
+        // fallback metadata
         const metadata = await fetchMetadata(url);
 
         const newBookmark = await Bookmark.create({
-            url, category, tags,
-            title: metadata.title,
-            description: metadata.description,
+            url,
+            category,
+            tags,
+            title: title || metadata.title,
+            description: description || metadata.description,
             image: metadata.image,
-            userEmail, // Gắn email người dùng vào record
+            userEmail,
         });
 
         return NextResponse.json({ success: true, data: newBookmark }, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: error.message === "Unauthorized" ? 401 : 500 });
+        const message =
+            error instanceof Error ? error.message : "Internal Server Error";
+        return NextResponse.json(
+            { success: false, error: message },
+            { status: message === "Unauthorized" ? 401 : 500 }
+        );
     }
 }
 
-export async function GET(req) {
+export async function GET(req: Request) {
     try {
         const userEmail = await checkAuth(); // Lấy email người dùng
         await connectDB();
         const { searchParams } = new URL(req.url);
 
-        const page = parseInt(searchParams.get('page')) || 1;
-        const limit = parseInt(searchParams.get('limit')) || 10;
+        const page = Number(searchParams.get('page') ?? 1);
+        const limit = Number(searchParams.get('limit') ?? 10);
         const category = searchParams.get('category');
         const tag = searchParams.get('tag');
         const search = searchParams.get('search');
         const isRandom = searchParams.get('random') === 'true';
 
         // BỘ LỌC CỐ ĐỊNH: Chỉ lấy bookmark của user đang đăng nhập
-        let filter = { userEmail };
+        let filter: any = { userEmail };
 
         if (category) filter.category = category;
         if (tag) filter.tags = { $in: [tag] };
@@ -82,6 +98,8 @@ export async function GET(req) {
             pagination: { total, page, pages: Math.ceil(total / limit) }
         });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: error.message === "Unauthorized" ? 401 : 500 });
+        const message =
+            error instanceof Error ? error.message : "Internal Server Error";
+        return NextResponse.json({ success: false, error: message }, { status: message === "Unauthorized" ? 401 : 500 });
     }
 }

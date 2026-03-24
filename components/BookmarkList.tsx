@@ -9,9 +9,10 @@ type Props = {
   viewMode: string;
   debouncedSearch: string;
   onDelete: (id: string) => void;
+  onEdit: (bm: Bookmark) => void;
 };
 
-export default function BookmarkList({ bookmarks, viewMode, debouncedSearch, onDelete }: Props) {
+export default function BookmarkList({ bookmarks, viewMode, debouncedSearch, onDelete, onEdit }: Props) {
   if (bookmarks.length === 0) {
     return (
       <div className="text-center mt-20 p-8 bg-white border border-dashed border-gray-300 rounded-2xl">
@@ -37,7 +38,7 @@ export default function BookmarkList({ bookmarks, viewMode, debouncedSearch, onD
       }
     >
       {bookmarks.map((bm) => (
-        <BookmarkCard key={bm._id} bm={bm} viewMode={viewMode} onDelete={onDelete} />
+        <BookmarkCard key={bm._id} bm={bm} viewMode={viewMode} onDelete={onDelete} onEdit={onEdit} />
       ))}
     </div>
   );

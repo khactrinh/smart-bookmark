@@ -1,5 +1,5 @@
 "use client";
-import { Trash2 } from "lucide-react"; // Import thêm icon
+import { Trash2, Pencil } from "lucide-react"; // Import thêm icon
 import { Bookmark } from "@/types/bookmark";
 
 
@@ -7,9 +7,10 @@ type Props = {
   bm: Bookmark;
   viewMode: string;
   onDelete: (id: string) => void;
+  onEdit: (bm: Bookmark) => void;
 };
 
-export default function BookmarkCard({ bm, viewMode, onDelete }: Props) {
+export default function BookmarkCard({ bm, viewMode, onDelete, onEdit }: Props) {
   return (
     <a
       href={bm.url}
@@ -18,6 +19,16 @@ export default function BookmarkCard({ bm, viewMode, onDelete }: Props) {
       className={`relative block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100 group
         ${viewMode === "list" ? "flex items-center h-32" : "flex flex-col"}`}
     >
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          onEdit(bm);
+        }}
+        className="absolute top-2 left-2 p-2 bg-white/90 text-blue-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-500 hover:text-white shadow-sm z-10"
+        title="Chỉnh sửa Bookmark"
+      >
+        <Pencil size={16} />
+      </button>
       {/* NÚT XOÁ (Tuyệt đối không để onClick ảnh hưởng thẻ thẻ a) */}
       <button
         onClick={(e) => {
@@ -30,6 +41,8 @@ export default function BookmarkCard({ bm, viewMode, onDelete }: Props) {
         <Trash2 size={16} />
       </button>
 
+
+
       {/* --- PHẦN HÌNH ẢNH VÀ NỘI DUNG GIỮ NGUYÊN NHƯ CŨ --- */}
       <div
         className={
@@ -39,7 +52,8 @@ export default function BookmarkCard({ bm, viewMode, onDelete }: Props) {
         }
       >
         <img
-          src={bm.image || "https://placehold.co/300x200?text=No+Image"}
+          src={`/api/image?url=${encodeURIComponent(bm.image || "https://placehold.co/300x200?text=No+Image")}`}
+
           alt={bm.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-100"
         />
