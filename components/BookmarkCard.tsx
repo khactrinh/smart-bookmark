@@ -54,7 +54,7 @@ export default function BookmarkCard({ bm, viewMode, onDelete, onEdit }: Props) 
         }
       >
         <img
-          src={`/api/image?url=${encodeURIComponent(bm.image || "https://placehold.co/300x200?text=No+Image")}`}
+          src={`/api/image?url=${encodeURIComponent(bm.image || `https://picsum.photos/300/200?random=${Math.floor(Math.random() * 1000)}`)}`}
 
           alt={bm.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-100"
