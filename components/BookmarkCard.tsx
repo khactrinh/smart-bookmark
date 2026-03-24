@@ -1,7 +1,23 @@
 "use client";
 import { Trash2 } from "lucide-react"; // Import thêm icon
 
-export default function BookmarkCard({ bm, viewMode, onDelete }: any) {
+type Bookmark = {
+  _id: string;
+  title: string;
+  url: string;
+  description: string;
+  category: string;
+  tags: string[];
+  image: string;
+};
+
+type Props = {
+  bm: Bookmark;
+  viewMode: string;
+  onDelete: (id: string) => void;
+};
+
+export default function BookmarkCard({ bm, viewMode, onDelete }: Props) {
   return (
     <a
       href={bm.url}
@@ -31,7 +47,7 @@ export default function BookmarkCard({ bm, viewMode, onDelete }: any) {
         }
       >
         <img
-          src={bm.image || "https://via.placeholder.com/300x200?text=No+Image"}
+          src={bm.image || "https://placehold.co/300x200?text=No+Image"}
           alt={bm.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-100"
         />
