@@ -69,7 +69,7 @@ export default function BookmarkApp() {
     }
   };
 
-  const handleDeleteBookmark = async (id) => {
+  const handleDeleteBookmark = async (id: string) => {
     if (!confirm("Bạn có chắc chắn muốn xoá bookmark này?")) return;
     await fetch(`/api/bookmarks/${id}`, { method: "DELETE" });
     fetchBookmarks(); // Reload lại danh sách

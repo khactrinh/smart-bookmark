@@ -1,7 +1,20 @@
 "use client";
 import BookmarkCard from "./BookmarkCard";
 
-export default function BookmarkList({ bookmarks, viewMode, debouncedSearch }) {
+type Bookmark = {
+  _id: string;
+  title: string;
+  url: string;
+};
+
+type Props = {
+  bookmarks: Bookmark[];
+  viewMode: string;
+  debouncedSearch: string;
+  onDelete: (id: string) => void;
+};
+
+export default function BookmarkList({ bookmarks, viewMode, debouncedSearch, onDelete }: Props) {
   if (bookmarks.length === 0) {
     return (
       <div className="text-center mt-20 p-8 bg-white border border-dashed border-gray-300 rounded-2xl">
@@ -27,7 +40,7 @@ export default function BookmarkList({ bookmarks, viewMode, debouncedSearch }) {
       }
     >
       {bookmarks.map((bm) => (
-        <BookmarkCard key={bm._id} bm={bm} viewMode={viewMode} />
+        <BookmarkCard key={bm._id} bm={bm} viewMode={viewMode} onDelete={onDelete} />
       ))}
     </div>
   );
