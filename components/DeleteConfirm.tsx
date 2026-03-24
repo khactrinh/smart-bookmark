@@ -14,11 +14,11 @@ import {
 
 import { Trash2 } from "lucide-react";
 
-export function DeleteConfirm({ onConfirm }: { onConfirm: () => void }) {
+export function DeleteConfirm({ onConfirm, triggerClass = "" }: { onConfirm: () => void, triggerClass?: string }) {
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <button className="p-2 text-red-500 hover:bg-red-100 rounded-lg">
+                <button className={triggerClass}>
                     <Trash2 size={16} />
                 </button>
             </AlertDialogTrigger>
@@ -35,11 +35,13 @@ export function DeleteConfirm({ onConfirm }: { onConfirm: () => void }) {
 
                 <AlertDialogFooter>
                     <AlertDialogCancel>Huỷ</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={onConfirm}
-                        className="bg-red-500 hover:bg-red-600"
-                    >
-                        Xoá
+                    <AlertDialogAction asChild>
+                        <button
+                            onClick={() => onConfirm()}
+                            className="bg-red-500 text-white px-4 py-2 rounded"
+                        >
+                            Xoá
+                        </button>
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

@@ -9,7 +9,7 @@ export default function LoginScreen() {
         <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
           <LayoutGrid size={32} />
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">My Bookmarks</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">LinkHub</h1>
         <p className="text-gray-500 mb-8">
           Lưu trữ và phân loại các liên kết yêu thích của bạn theo cách hiện đại
           nhất.

@@ -41,6 +41,8 @@ export default function BookmarkApp() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+
+
   // Kỹ thuật Debounce cho Search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,15 +83,16 @@ export default function BookmarkApp() {
     }
   };
 
-  // const handleDeleteBookmark = async (id: string) => {
-  //   if (!confirm("Bạn có chắc chắn muốn xoá bookmark này?")) return;
-  //   await fetch(`/api/bookmarks/${id}`, { method: "DELETE" });
-  //   fetchBookmarks(); // Reload lại danh sách
-  // };
 
-  const handleDeleteBookmark = (id: string) => {
-    setSelectedId(id);
-    setConfirmOpen(true);
+
+  const handleDeleteBookmark = async (id: string) => {
+    console.log("CALL DELETE API", id);
+
+    await fetch(`/api/bookmarks/${id}`, {
+      method: "DELETE",
+    });
+
+    fetchBookmarks();
   };
 
   const confirmDelete = async () => {
@@ -198,14 +201,7 @@ export default function BookmarkApp() {
         }}
       />
 
-      <ConfirmModal
-        isOpen={confirmOpen}
-        title="Xoá Bookmark"
-        description="Bạn có chắc chắn muốn xoá bookmark này? Hành động này không thể hoàn tác."
-        onConfirm={confirmDelete}
-        onCancel={() => setConfirmOpen(false)}
-        loading={isDeleting}
-      />
+
 
 
     </div>
