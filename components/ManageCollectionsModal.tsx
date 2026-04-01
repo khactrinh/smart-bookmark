@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { X, Trash2, Edit2, Check, Plus, Share2, ExternalLink, Copy } from "lucide-react";
 import { Collection } from "@/types/bookmark";
+import { toast } from "sonner";
 
 interface Props {
   isOpen: boolean;
@@ -52,33 +53,52 @@ export default function ManageCollectionsModal({
     if (data.success) {
       setNewName("");
       setNewDesc("");
+      toast.success(`Đã tạo collection "${newName}"`);
       fetchCollections();
+    } else {
+      toast.error(data.error || "Không thể tạo collection");
     }
   };
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Xoá collection "${name}"? Các bookmark trong này sẽ không bị xoá, chỉ là không thuộc collection này nữa.`))
       return;
-    await fetch(`/api/collections/${id}`, { method: "DELETE" });
-    fetchCollections();
+    try {
+      const res = await fetch(`/api/collections/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Đã xoá collection "${name}"`);
+        fetchCollections();
+      } else {
+        toast.error(data.error || "Lỗi khi xoá collection");
+      }
+    } catch (err) {
+      toast.error("Lỗi kết nối");
+    }
   };
 
   const handleUpdate = async (id: string) => {
     if (!editName.trim()) return setEditingId(null);
-    await fetch(`/api/collections/${id}`, {
+    const res = await fetch(`/api/collections/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: editName, description: editDesc }),
     });
-    setEditingId(null);
-    fetchCollections();
+    const data = await res.json();
+    if (data.success) {
+      toast.success("Đã cập nhật thông tin");
+      setEditingId(null);
+      fetchCollections();
+    } else {
+      toast.error(data.error || "Không thể cập nhật");
+    }
   };
 
   const copyShareLink = (shareId: string | undefined) => {
     if (!shareId) return;
     const link = `${window.location.origin}/shared/${shareId}`;
     navigator.clipboard.writeText(link);
-    alert("Đã sao chép link chia sẻ!");
+    toast.success("Đã sao chép link chia sẻ!");
   };
 
   return (
@@ -202,7 +222,7 @@ export default function ManageCollectionsModal({
                           </button>
                           <button
                             onClick={() => handleDelete(coll._id, coll.name)}
-                            className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-50 rounded-lg transition-colors"
+                            className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
                             title="Xoá"
                           >
                             <Trash2 size={16} />

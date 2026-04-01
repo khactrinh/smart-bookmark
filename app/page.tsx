@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 // Import các Component con
 import LoginScreen from "@/components/LoginScreen";
@@ -104,12 +105,18 @@ export default function BookmarkApp() {
     try {
       setIsDeleting(true);
 
-      await fetch(`/api/bookmarks/${selectedId}`, {
+      const res = await fetch(`/api/bookmarks/${selectedId}`, {
         method: "DELETE",
       });
-
-      fetchBookmarks();
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Đã xoá bookmark thành công");
+        fetchBookmarks();
+      } else {
+        toast.error("Không thể xoá bookmark");
+      }
     } catch (err) {
+      toast.error("Lỗi kết nối");
       console.error(err);
     } finally {
       setIsDeleting(false);

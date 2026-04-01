@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { X, Trash2, Edit2, Check, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ManageCategoriesModal({
   isOpen,
@@ -16,12 +17,18 @@ export default function ManageCategoriesModal({
 
   const handleAdd = async () => {
     if (!newName.trim()) return;
-    await fetch("/api/categories", {
+    const res = await fetch("/api/categories", {
       method: "POST",
       body: JSON.stringify({ name: newName }),
     });
-    setNewName("");
-    refreshData();
+    const data = await res.json();
+    if (data.success) {
+      toast.success(`Đã thêm chủ đề "${newName}"`);
+      setNewName("");
+      refreshData();
+    } else {
+      toast.error(data.error || "Lỗi khi thêm chủ đề");
+    }
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -31,18 +38,30 @@ export default function ManageCategoriesModal({
       )
     )
       return;
-    await fetch(`/api/categories?id=${id}&name=${name}`, { method: "DELETE" });
-    refreshData();
+    const res = await fetch(`/api/categories?id=${id}&name=${name}`, { method: "DELETE" });
+    const data = await res.json();
+    if (data.success) {
+      toast.success(`Đã xoá chủ đề "${name}"`);
+      refreshData();
+    } else {
+      toast.error(data.error || "Lỗi khi xoá");
+    }
   };
 
   const handleUpdate = async (id: string, oldName: string) => {
     if (!editName.trim() || editName === oldName) return setEditingId(null);
-    await fetch("/api/categories", {
+    const res = await fetch("/api/categories", {
       method: "PUT",
       body: JSON.stringify({ id, newName: editName, oldName }),
     });
-    setEditingId(null);
-    refreshData();
+    const data = await res.json();
+    if (data.success) {
+      toast.success("Đã cập nhật chủ đề");
+      setEditingId(null);
+      refreshData();
+    } else {
+      toast.error(data.error || "Lỗi khi cập nhật");
+    }
   };
 
   return (

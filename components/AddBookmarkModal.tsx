@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { X, Loader2, ChevronDown, Check } from "lucide-react";
 import { Collection } from "@/types/bookmark";
+import { toast } from "sonner";
 
 type Props = {
   isOpen: boolean;
@@ -122,12 +123,14 @@ export default function AddBookmarkModal({
       const data = await res.json();
 
       if (data.success) {
+        toast.success(isEditMode ? "Đã cập nhật bookmark" : "Đã thêm bookmark mới");
         onSuccess();
         onClose();
       } else {
-        alert("Lỗi: " + data.error);
+        toast.error(data.error || "Có lỗi xảy ra");
       }
     } catch (error) {
+      toast.error("Lỗi kết nối server");
       console.error(error);
     } finally {
       setIsSubmitting(false);
