@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         const userEmail = await checkAuth();
         await connectDB();
 
-        const { url, category, tags, title, description } = await req.json();
+        const { url, category, tags, title, description, collectionIds } = await req.json();
 
         // fallback metadata
         const metadata = await fetchMetadata(url);
@@ -33,6 +33,7 @@ export async function POST(req: Request) {
             url,
             category,
             tags,
+            collectionIds: collectionIds || [],
             title: title || metadata.title,
             description: description || metadata.description,
             image: metadata.image,
@@ -61,6 +62,7 @@ export async function GET(req: Request) {
         const category = searchParams.get('category');
         const tag = searchParams.get('tag');
         const search = searchParams.get('search');
+        const collectionId = searchParams.get('collectionId');
         const isRandom = searchParams.get('random') === 'true';
 
         // BỘ LỌC CỐ ĐỊNH: Chỉ lấy bookmark của user đang đăng nhập
@@ -68,6 +70,7 @@ export async function GET(req: Request) {
 
         if (category) filter.category = category;
         if (tag) filter.tags = { $in: [tag] };
+        if (collectionId) filter.collectionIds = collectionId;
 
         if (search) {
             filter.$or = [

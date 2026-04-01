@@ -132,14 +132,20 @@ export async function PUT(
         console.log("PUT ID:", id);
         console.log("BODY:", body);
 
+        const updateData: any = {
+            title: body.title,
+            description: body.description,
+            category: body.category,
+            tags: body.tags,
+        };
+
+        if (body.collectionIds !== undefined) {
+            updateData.collectionIds = body.collectionIds;
+        }
+
         const updated = await Bookmark.findOneAndUpdate(
             { _id: id, userEmail: session.user.email },
-            {
-                title: body.title,
-                description: body.description,
-                category: body.category,
-                tags: body.tags,
-            },
+            updateData,
             { returnDocument: "after" }
         );
 

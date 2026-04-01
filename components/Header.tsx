@@ -155,6 +155,7 @@ import {
   List,
   X,
   Settings,
+  Folder,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
@@ -172,6 +173,7 @@ export default function Header({
   setIsModalOpen,
   setPage,
   onOpenManageCat,
+  onOpenManageCollections,
   categoriesList,
 }: any) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -277,8 +279,18 @@ export default function Header({
           <button
             onClick={onOpenManageCat}
             className="p-2 rounded-md bg-gray-100 hover:bg-gray-200"
+            title="Quản lý Chủ đề"
           >
             <Settings size={16} />
+          </button>
+
+          {/* Collections */}
+          <button
+            onClick={onOpenManageCollections}
+            className="p-2 rounded-md bg-gray-100 hover:bg-green-100 text-green-700 hover:text-green-800"
+            title="Quản lý Collections"
+          >
+            <Folder size={16} />
           </button>
 
           {/* Avatar Dropdown */}

@@ -11,6 +11,7 @@ import BookmarkList from "@/components/BookmarkList";
 import Pagination from "@/components/Pagination";
 import AddBookmarkModal from "@/components/AddBookmarkModal";
 import ManageCategoriesModal from "@/components/ManageCategoriesModal";
+import ManageCollectionsModal from "@/components/ManageCollectionsModal";
 import { Bookmark } from "@/types/bookmark";
 import ConfirmModal from "@/components/ConfirmModal";
 
@@ -30,12 +31,13 @@ export default function BookmarkApp() {
 
   const [categoriesList, setCategoriesList] = useState([]);
   const [isManageCatOpen, setIsManageCatOpen] = useState(false);
+  const [isManageCollOpen, setIsManageCollOpen] = useState(false);
+  const [collectionId, setCollectionId] = useState<string | null>(null);
 
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
   //const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   //const [editingBookmark, setEditingBookmark] = useState(null);
-
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -64,6 +66,7 @@ export default function BookmarkApp() {
 
     let url = `/api/bookmarks?page=${page}&limit=12`;
     if (category) url += `&category=${category}`;
+    if (collectionId) url += `&collectionId=${collectionId}`;
     if (isRandom) url += `&random=true`;
     if (debouncedSearch)
       url += `&search=${encodeURIComponent(debouncedSearch)}`;
@@ -117,7 +120,7 @@ export default function BookmarkApp() {
 
   useEffect(() => {
     fetchBookmarks();
-  }, [page, isRandom, category, debouncedSearch, session]);
+  }, [page, isRandom, category, collectionId, debouncedSearch, session]);
 
   useEffect(() => {
     fetchCategories();
@@ -147,7 +150,7 @@ export default function BookmarkApp() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         category={category}
-        setCategory={setCategory}
+        setCategory={(cat: string) => { setCategory(cat); setCollectionId(null); }}
         isRandom={isRandom}
         setIsRandom={setIsRandom}
         viewMode={viewMode}
@@ -155,11 +158,24 @@ export default function BookmarkApp() {
         setIsModalOpen={setIsModalOpen}
         setPage={setPage}
         onOpenManageCat={() => setIsManageCatOpen(true)}
+        onOpenManageCollections={() => setIsManageCollOpen(true)}
         categoriesList={categoriesList}
       />
 
       {/* 2. Nội dung chính: Danh sách Bookmark */}
       <main className="max-w-6xl mx-auto">
+        {collectionId && (
+          <div className="mb-6 flex items-center justify-between bg-green-50 text-green-800 px-4 py-3 rounded-lg border border-green-200">
+            <span className="font-medium">Đang xem các bookmark trong Collection</span>
+            <button
+              onClick={() => { setCollectionId(null); setPage(1); }}
+              className="text-sm bg-white px-3 py-1 rounded border hover:bg-gray-50"
+            >
+              Xem tất cả
+            </button>
+          </div>
+        )}
+
         <BookmarkList
           bookmarks={bookmarks}
           viewMode={viewMode}
@@ -198,6 +214,17 @@ export default function BookmarkApp() {
         refreshData={() => {
           fetchCategories();
           fetchBookmarks();
+        }}
+      />
+
+      <ManageCollectionsModal
+        isOpen={isManageCollOpen}
+        onClose={() => setIsManageCollOpen(false)}
+        onViewCollection={(id: string) => {
+           setCollectionId(id);
+           setIsManageCollOpen(false);
+           setCategory("");
+           setPage(1);
         }}
       />
 
