@@ -34,11 +34,9 @@ export default function SharedCollectionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="animate-spin text-gray-400 mx-auto mb-4" size={40} />
-          <p className="text-gray-500 font-medium">Đang tải bộ sưu tập được chia sẻ...</p>
-        </div>
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+        <Loader2 className="animate-spin text-black mb-4" size={48} />
+        <p className="text-gray-600 font-semibold text-lg animate-pulse">Đang tải bộ sưu tập...</p>
       </div>
     );
   }

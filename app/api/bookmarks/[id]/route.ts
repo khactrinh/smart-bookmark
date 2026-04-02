@@ -139,6 +139,10 @@ export async function PUT(
             tags: body.tags,
         };
 
+        if (body.note !== undefined) {
+            updateData.note = body.note;
+        }
+
         if (body.collectionIds !== undefined) {
             updateData.collectionIds = body.collectionIds;
         }

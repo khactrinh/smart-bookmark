@@ -13,6 +13,7 @@ import Pagination from "@/components/Pagination";
 import AddBookmarkModal from "@/components/AddBookmarkModal";
 import ManageCategoriesModal from "@/components/ManageCategoriesModal";
 import ManageCollectionsModal from "@/components/ManageCollectionsModal";
+import EditNoteModal from "@/components/EditNoteModal";
 import { Bookmark } from "@/types/bookmark";
 import ConfirmModal from "@/components/ConfirmModal";
 
@@ -36,6 +37,8 @@ export default function BookmarkApp() {
   const [collectionId, setCollectionId] = useState<string | null>(null);
 
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
+  const [editingNoteBookmark, setEditingNoteBookmark] = useState<Bookmark | null>(null);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   //const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   //const [editingBookmark, setEditingBookmark] = useState(null);
@@ -43,6 +46,7 @@ export default function BookmarkApp() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
 
 
@@ -73,6 +77,7 @@ export default function BookmarkApp() {
       url += `&search=${encodeURIComponent(debouncedSearch)}`;
 
     try {
+      setIsLoadingData(true);
       const res = await fetch(url);
       const data = await res.json();
 
@@ -84,6 +89,8 @@ export default function BookmarkApp() {
       }
     } catch (error) {
       console.error("Lỗi fetch API:", error);
+    } finally {
+      setIsLoadingData(false);
     }
   };
 
@@ -138,8 +145,9 @@ export default function BookmarkApp() {
   // Xử lý các trạng thái đăng nhập
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin text-gray-500" size={40} />
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+        <Loader2 className="animate-spin text-black mb-4" size={48} />
+        <p className="text-gray-600 font-semibold text-lg animate-pulse">Đang tải dữ liệu...</p>
       </div>
     );
   }
@@ -150,7 +158,13 @@ export default function BookmarkApp() {
 
   // Giao diện chính sau khi đăng nhập thành công
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans relative">
+      {isLoadingData && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm transition-all duration-300">
+          <Loader2 className="animate-spin text-black mb-4" size={48} />
+          <p className="text-gray-700 font-semibold text-lg animate-pulse">Đang đồng bộ bookmarks...</p>
+        </div>
+      )}
       {/* 1. Thanh công cụ và Header */}
       <Header
         session={session}
@@ -198,6 +212,10 @@ export default function BookmarkApp() {
             setEditingBookmark(bm);
             setIsModalOpen(true);
           }}
+          onEditNote={(bm) => {
+            setEditingNoteBookmark(bm);
+            setIsNoteModalOpen(true);
+          }}
         />
 
         {/* 3. Phân trang (Ẩn khi random hoặc không có dữ liệu) */}
@@ -243,6 +261,16 @@ export default function BookmarkApp() {
 
 
 
+
+      <EditNoteModal
+        isOpen={isNoteModalOpen}
+        onClose={() => {
+          setIsNoteModalOpen(false);
+          setEditingNoteBookmark(null);
+        }}
+        onSuccess={fetchBookmarks}
+        bookmark={editingNoteBookmark}
+      />
 
     </div>
   );

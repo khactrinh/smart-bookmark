@@ -1,5 +1,5 @@
 "use client";
-import { Trash2, Pencil } from "lucide-react"; // Import thêm icon
+import { Trash2, Pencil, StickyNote } from "lucide-react"; // Import thêm icon
 import { Bookmark } from "@/types/bookmark";
 import { DeleteConfirm } from "@/components/DeleteConfirm";
 
@@ -8,9 +8,10 @@ type Props = {
   viewMode: string;
   onDelete: (id: string) => void;
   onEdit: (bm: Bookmark) => void;
+  onEditNote: (bm: Bookmark) => void;
 };
 
-export default function BookmarkCard({ bm, viewMode, onDelete, onEdit }: Props) {
+export default function BookmarkCard({ bm, viewMode, onDelete, onEdit, onEditNote }: Props) {
   const actionBtn =
     "p-2 bg-white/90 rounded-lg shadow-sm transition-all opacity-0 group-hover:opacity-100 hover:scale-105 flex items-center justify-center";
   return (
@@ -21,8 +22,24 @@ export default function BookmarkCard({ bm, viewMode, onDelete, onEdit }: Props) 
       className={`relative block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100 group
         ${viewMode === "list" ? "flex items-center h-32" : "flex flex-col"}`}
     >
-      <div className="absolute top-2 right-2 flex gap-2 z-10">
-        {/* EDIT */}
+      <div className="absolute top-2 left-2 z-10">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            onEditNote(bm);
+          }}
+          className={`p-2 rounded-lg shadow-sm transition-all flex items-center justify-center ${
+            bm.note 
+              ? "bg-yellow-100 text-yellow-600 border border-yellow-200 hover:bg-yellow-200 opacity-100" 
+              : "bg-white/90 text-gray-600 hover:bg-gray-100 opacity-0 group-hover:opacity-100 hover:scale-105"
+          }`}
+          title="Ghi chú"
+        >
+          <StickyNote size={16} />
+        </button>
+      </div>
+
+      <div className="absolute top-2 right-2 flex gap-2 z-10">        {/* EDIT */}
         <button
           onClick={(e) => {
             e.preventDefault();

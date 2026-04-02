@@ -3,6 +3,7 @@ export type Bookmark = {
     title: string;
     url: string;
     description?: string;
+    note?: string;
     category?: string;
     tags?: string[];
     image?: string;

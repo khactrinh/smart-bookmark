@@ -6,6 +6,7 @@ const BookmarkSchema = new mongoose.Schema({
     description: { type: String },
     image: { type: String }, // Ảnh thumbnail của Youtube/Website
     category: { type: String, default: 'Uncategorized' },
+    note: { type: String }, // Ghi chú cá nhân
     tags: [{ type: String }], // Mảng các tag
     collectionIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Collection' }],
     userEmail: { type: String, required: true },
