@@ -166,6 +166,12 @@ export default function BookmarkApp() {
         setPage={setPage}
         onOpenManageCat={() => setIsManageCatOpen(true)}
         onOpenManageCollections={() => setIsManageCollOpen(true)}
+        onReset={() => {
+          setCollectionId(null);
+          setCategory("");
+          setSearchQuery("");
+          setPage(1);
+        }}
         categoriesList={categoriesList}
       />
 

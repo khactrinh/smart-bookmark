@@ -174,6 +174,7 @@ export default function Header({
   setPage,
   onOpenManageCat,
   onOpenManageCollections,
+  onReset,
   categoriesList,
 }: any) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -190,7 +191,10 @@ export default function Header({
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
 
         {/* LEFT: Logo */}
-        <h1 className="text-xl font-bold text-gray-800 tracking-tight">
+        <h1 
+          onClick={onReset}
+          className="text-xl font-bold text-gray-800 tracking-tight cursor-pointer hover:opacity-70 transition-opacity"
+        >
           🚀 LinkHub
         </h1>
 
