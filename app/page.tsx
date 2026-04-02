@@ -133,12 +133,16 @@ export default function BookmarkApp() {
   };
 
   useEffect(() => {
-    fetchBookmarks();
-  }, [page, isRandom, category, collectionId, debouncedSearch, session]);
+    if (status === "authenticated") {
+      fetchBookmarks();
+    }
+  }, [page, isRandom, category, collectionId, debouncedSearch, status]);
 
   useEffect(() => {
-    fetchCategories();
-  }, [session]);
+    if (status === "authenticated") {
+      fetchCategories();
+    }
+  }, [status]);
 
 
 
