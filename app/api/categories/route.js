@@ -36,7 +36,10 @@ export async function PUT(req) {
         const userEmail = await checkAuth(); await connectDB();
         const { id, newName, oldName } = await req.json();
         await Category.findOneAndUpdate({ _id: id, userEmail }, { name: newName });
-        await Bookmark.updateMany({ category: oldName, userEmail }, { category: newName }); // Tự động cập nhật bookmark
+        await Bookmark.updateMany(
+            { category: oldName, userEmail }, 
+            { $set: { "category.$": newName } }
+        ); // Tự động cập nhật phần tử trong mảng category của bookmark
         return NextResponse.json({ success: true });
     } catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }) }
 }
@@ -50,7 +53,16 @@ export async function DELETE(req) {
         const name = searchParams.get('name');
 
         await Category.findOneAndDelete({ _id: id, userEmail });
-        await Bookmark.updateMany({ category: name, userEmail }, { category: "Uncategorized" }); // Đưa bookmark về rỗng
+        await Bookmark.updateMany(
+            { category: name, userEmail }, 
+            { $pull: { category: name } }
+        ); // Xoá category khỏi mảng
+        
+        // Nếu bookmark không còn category nào, đưa về Uncategorized
+        await Bookmark.updateMany(
+            { category: { $size: 0 }, userEmail },
+            { $push: { category: "Uncategorized" } }
+        );
         return NextResponse.json({ success: true });
     } catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }) }
 }

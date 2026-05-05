@@ -67,7 +67,7 @@ export default function BookmarkCard({ bm, viewMode, onDelete, onEdit, onEditNot
         className={
           viewMode === "list"
             ? "w-48 h-full shrink-0 overflow-hidden"
-            : "w-full h-44 overflow-hidden"
+            : "w-full h-40 overflow-hidden"
         }
       >
         <img
@@ -77,19 +77,33 @@ export default function BookmarkCard({ bm, viewMode, onDelete, onEdit, onEditNot
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-100"
         />
       </div>
-      <div className="p-4 flex flex-col justify-between flex-1 h-full">
+      <div className="p-3.5 flex flex-col justify-between flex-1 h-full">
         <div>
           <h3 className="font-bold text-gray-800 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
             {bm.title || bm.url}
           </h3>
-          <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+          <p className="text-sm text-gray-500 mt-2 line-clamp-1">
             {bm.description}
           </p>
+          {bm.note && (
+            <div className="mt-2 p-2 bg-yellow-50 rounded-lg border border-yellow-100">
+              <p className="text-xs text-yellow-800 line-clamp-1">
+                <span className="font-bold mr-1">Ghi chú:</span>
+                {bm.note}
+              </p>
+            </div>
+          )}
         </div>
         <div className="mt-4 flex gap-2 flex-wrap items-center">
-          <span className="text-xs font-medium bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md">
-            {bm.category}
-          </span>
+          {Array.isArray(bm.category) ? bm.category.map((cat: string) => (
+            <span key={cat} className="text-xs font-medium bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md">
+              {cat}
+            </span>
+          )) : bm.category && (
+            <span className="text-xs font-medium bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md">
+              {bm.category}
+            </span>
+          )}
           {bm.tags?.map((tag: any) => (
             <span
               key={tag}

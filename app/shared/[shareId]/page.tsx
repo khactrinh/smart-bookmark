@@ -122,9 +122,15 @@ export default function SharedCollectionPage() {
                 </div>
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex flex-wrap gap-2">
-                    <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                      {bm.category}
-                    </span>
+                    {Array.isArray(bm.category) ? bm.category.map((cat: string) => (
+                      <span key={cat} className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                        {cat}
+                      </span>
+                    )) : bm.category && (
+                      <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                        {bm.category}
+                      </span>
+                    )}
                   </div>
                   <ExternalLink size={14} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
                 </div>

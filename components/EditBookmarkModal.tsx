@@ -16,7 +16,7 @@ export default function EditBookmarkModal({
         if (bookmark) {
             setTitle(bookmark.title || "");
             setDescription(bookmark.description || "");
-            setCategory(bookmark.category || "");
+            setCategory(Array.isArray(bookmark.category) ? bookmark.category.join(", ") : bookmark.category || "");
             setTags((bookmark.tags || []).join(", "));
         }
     }, [bookmark]);
@@ -32,8 +32,8 @@ export default function EditBookmarkModal({
             body: JSON.stringify({
                 title,
                 description,
-                category,
-                tags: tags.split(",").map((t) => t.trim()),
+                category: category.split(",").map((c) => c.trim()).filter(Boolean),
+                tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
             }),
         });
 

@@ -22,7 +22,7 @@ export default function Pagination({ page, setPage, totalPages }: any) {
   };
 
   return (
-    <div className="flex justify-center mt-12 gap-2 sm:gap-4 items-center flex-wrap">
+    <div className="flex justify-center mt-6 gap-2 sm:gap-4 items-center flex-wrap mb-8">
       <button
         disabled={page <= 1}
         onClick={() => setPage(1)}

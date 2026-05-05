@@ -77,6 +77,7 @@ import { connectDB } from "@/lib/mongodb";
 import Bookmark from "@/models/Bookmark";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import Category from "@/models/Category";
 
 // DELETE
 export async function DELETE(
@@ -158,6 +159,24 @@ export async function PUT(
                 { success: false, error: "Bookmark not found" },
                 { status: 404 }
             );
+        }
+
+        // Sync categories to Category collection (Non-blocking)
+        if (updated.category && Array.isArray(updated.category)) {
+            try {
+                const syncPromises = updated.category
+                    .filter(catName => typeof catName === 'string' && catName.trim() !== "" && catName !== "Uncategorized")
+                    .map(async (catName: string) => {
+                        return Category.findOneAndUpdate(
+                            { name: catName.trim(), userEmail: session.user.email },
+                            { name: catName.trim(), userEmail: session.user.email },
+                            { upsert: true, new: true }
+                        );
+                    });
+                await Promise.all(syncPromises);
+            } catch (syncError) {
+                console.error("Category sync error in PUT (ignored):", syncError);
+            }
         }
 
         return NextResponse.json({ success: true, data: updated });

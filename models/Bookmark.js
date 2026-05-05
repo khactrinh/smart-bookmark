@@ -5,9 +5,9 @@ const BookmarkSchema = new mongoose.Schema({
     title: { type: String },
     description: { type: String },
     image: { type: String }, // Ảnh thumbnail của Youtube/Website
-    category: { type: String, default: 'Uncategorized' },
+    category: [String],
     note: { type: String }, // Ghi chú cá nhân
-    tags: [{ type: String }], // Mảng các tag
+    tags: [String], // Mảng các tag
     collectionIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Collection' }],
     userEmail: { type: String, required: true },
 }, { timestamps: true }); // Tự động tạo createdAt (lưu theo ngày tháng)
@@ -18,4 +18,10 @@ BookmarkSchema.index({ tags: 1 });
 BookmarkSchema.index({ collectionIds: 1 });
 BookmarkSchema.index({ createdAt: -1 });
 
-export default mongoose.models.Bookmark || mongoose.model('Bookmark', BookmarkSchema);
+// Force delete the model to ensure the schema is updated in Next.js hot-reloading
+if (mongoose.models.Bookmark) {
+    delete mongoose.models.Bookmark;
+}
+
+const Bookmark = mongoose.model('Bookmark', BookmarkSchema);
+export default Bookmark;

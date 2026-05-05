@@ -4,7 +4,7 @@ export type Bookmark = {
     url: string;
     description?: string;
     note?: string;
-    category?: string;
+    category: string[];
     tags?: string[];
     image?: string;
     collectionIds?: string[];

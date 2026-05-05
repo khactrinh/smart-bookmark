@@ -156,6 +156,7 @@ import {
   X,
   Settings,
   Folder,
+  RefreshCw,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
@@ -172,6 +173,8 @@ export default function Header({
   setViewMode,
   setIsModalOpen,
   setPage,
+  limit,
+  setLimit,
   onOpenManageCat,
   onOpenManageCollections,
   onReset,
@@ -250,16 +253,45 @@ export default function Header({
             ))}
           </select>
 
-          {/* Random */}
-          <button
-            onClick={() => setIsRandom(!isRandom)}
-            className={`p-2 rounded-md ${isRandom
-              ? "bg-purple-600 text-white"
-              : "bg-gray-100 hover:bg-gray-200"
-              }`}
+          {/* Limit selector */}
+          <select
+            value={limit}
+            onChange={(e) => {
+              setLimit(Number(e.target.value));
+              setPage(1);
+            }}
+            className="px-2 py-2 border rounded-md bg-white text-sm"
+            title="Số mục mỗi trang"
           >
-            <Shuffle size={16} />
-          </button>
+            {[8, 12, 24, 48, 96].map((l) => (
+              <option key={l} value={l}>
+                {l} / page
+              </option>
+            ))}
+          </select>
+
+          {/* Random */}
+          <div className="flex bg-gray-100 rounded-md p-0.5">
+            <button
+              onClick={() => setIsRandom(!isRandom)}
+              className={`p-1.5 rounded-md transition-all ${isRandom
+                ? "bg-purple-600 text-white shadow-sm"
+                : "hover:bg-gray-200 text-gray-500"
+                }`}
+              title="Bật/Tắt chế độ Ngẫu nhiên"
+            >
+              <Shuffle size={16} />
+            </button>
+            {isRandom && (
+              <button 
+                onClick={() => setIsRandom(true)}
+                className="p-1.5 hover:bg-purple-100 text-purple-600 rounded-md transition-all group"
+                title="Làm mới danh sách ngẫu nhiên"
+              >
+                <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-300" />
+              </button>
+            )}
+          </div>
 
           {/* View mode */}
           <div className="flex bg-gray-100 rounded-md p-1">

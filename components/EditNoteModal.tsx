@@ -78,7 +78,7 @@ export default function EditNoteModal({
               autoFocus
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-black bg-gray-50/50 h-40 resize-none font-sans"
+              className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-black bg-gray-50/50 h-64 resize-y font-sans"
               placeholder="Nhập ghi chú của bạn về bookmark này..."
             />
           </div>

@@ -3,6 +3,16 @@ import { useState, useEffect } from "react";
 import { X, Loader2, ChevronDown, Check } from "lucide-react";
 import { Collection } from "@/types/bookmark";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Props = {
   isOpen: boolean;
@@ -20,7 +30,8 @@ export default function AddBookmarkModal({
   editingBookmark,
 }: Props) {
   const [newUrl, setNewUrl] = useState("");
-  const [newCategory, setNewCategory] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [newCategoryInput, setNewCategoryInput] = useState("");
   const [newTags, setNewTags] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
@@ -28,7 +39,11 @@ export default function AddBookmarkModal({
 
   const [customTitle, setCustomTitle] = useState("");
   const [customDescription, setCustomDescription] = useState("");
+  const [note, setNote] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  const [duplicateCount, setDuplicateCount] = useState<number>(0);
+  const [showDuplicateAlert, setShowDuplicateAlert] = useState<boolean>(false);
 
   const isEditMode = !!editingBookmark;
 
@@ -49,15 +64,26 @@ export default function AddBookmarkModal({
         setNewUrl("");
         setCustomTitle("");
         setCustomDescription("");
-        setNewCategory("");
+        setSelectedCategories([]);
+        setNewCategoryInput("");
         setNewTags("");
+        setNote("");
         setSelectedCollections([]);
       } else {
         setNewUrl(editingBookmark.url || "");
         setCustomTitle(editingBookmark.title || "");
         setCustomDescription(editingBookmark.description || "");
-        setNewCategory(editingBookmark.category || "");
-        setNewTags(editingBookmark.tags?.join(", ") || "");
+        setNote(editingBookmark.note || "");
+        const initialCats = Array.isArray(editingBookmark.category)
+        ? editingBookmark.category.map(c => typeof c === 'string' ? c : (c as any).type || c)
+        : typeof editingBookmark.category === 'string'
+        ? [editingBookmark.category]
+        : [];
+      setSelectedCategories(initialCats as string[]);  setNewCategoryInput("");
+      const initialTags = Array.isArray(editingBookmark.tags)
+        ? editingBookmark.tags.map(t => typeof t === 'string' ? t : (t as any).type || String(t))
+        : [];
+      setNewTags(initialTags.join(", "));
         setSelectedCollections(editingBookmark.collectionIds || []);
       }
     }
@@ -91,10 +117,7 @@ export default function AddBookmarkModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!newUrl) return;
-
+  const submitData = async (forceMerge = false) => {
     setIsSubmitting(true);
     const tagsArray = newTags
       .split(",")
@@ -113,14 +136,25 @@ export default function AddBookmarkModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: newUrl,
-          category: newCategory || "Uncategorized",
+          category: selectedCategories.length > 0 
+            ? selectedCategories 
+            : ["Uncategorized"],
           tags: tagsArray,
           title: customTitle,
           description: customDescription,
+          note: note,
           collectionIds: selectedCollections,
+          forceMerge: forceMerge,
         }),
       });
       const data = await res.json();
+
+      if (res.status === 409 && data.error === "DUPLICATE_URL") {
+        setIsSubmitting(false);
+        setDuplicateCount(data.duplicateCount);
+        setShowDuplicateAlert(true);
+        return;
+      }
 
       if (data.success) {
         toast.success(isEditMode ? "Đã cập nhật bookmark" : "Đã thêm bookmark mới");
@@ -137,11 +171,26 @@ export default function AddBookmarkModal({
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!newUrl) return;
+    submitData(false);
+  };
+
   const toggleCollection = (id: string) => {
     setSelectedCollections((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
+
+  const toggleCategory = (name: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+    );
+  };
+
+  // Removed handleAddNewCategory as per user request to simplify and only allow selection from existing list
+  
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -183,20 +232,76 @@ export default function AddBookmarkModal({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-gray-700">Chủ đề</label>
+              <label className="block text-sm font-semibold text-gray-700">Tìm nhanh chủ đề</label>
               <input
                 type="text"
-                placeholder="Chọn hoặc gõ mới..."
-                list="category-suggestions"
+                placeholder="Nhập tên để tìm chủ đề..."
                 className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-black bg-gray-50/50"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
+                value={newCategoryInput}
+                onChange={(e) => setNewCategoryInput(e.target.value)}
               />
-              <datalist id="category-suggestions">
-                {categoriesList?.map((cat: any) => (
-                  <option key={cat._id} value={cat.name} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <label className="block text-sm font-semibold text-gray-700">Chọn Chủ đề</label>
+              {selectedCategories.length > 0 && (
+                <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                  Đã chọn {selectedCategories.length}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto p-1 border rounded-xl bg-gray-50/30">
+              {categoriesList?.filter((cat: any) => 
+                cat.name.toLowerCase().includes(newCategoryInput.toLowerCase())
+              ).map((cat: any) => (
+                <div
+                  key={cat._id}
+                  onClick={() => toggleCategory(cat.name)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
+                    selectedCategories.includes(cat.name)
+                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                      : "bg-white text-gray-600 border-gray-100 hover:border-gray-300"
+                  }`}
+                >
+                  <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
+                    selectedCategories.includes(cat.name) ? "bg-blue-600 border-blue-600" : "bg-white border-gray-300"
+                  }`}>
+                    {selectedCategories.includes(cat.name) && <Check size={10} className="text-white" />}
+                  </div>
+                  <span className="text-[11px] font-medium truncate">{cat.name}</span>
+                </div>
+              ))}
+              
+              {/* Show selected categories that might be filtered out or are custom */}
+              {selectedCategories
+                .filter(name => 
+                  // Is it a custom category? (not in global list)
+                  !categoriesList?.find(c => c.name === name) || 
+                  // OR was it filtered out by search? (we want to keep seeing selected ones)
+                  !name.toLowerCase().includes(newCategoryInput.toLowerCase())
+                )
+                .map(name => (
+                  <div
+                    key={name}
+                    onClick={() => toggleCategory(name)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all bg-blue-50 text-blue-700 border-blue-200"
+                  >
+                    <div className="w-3.5 h-3.5 rounded border flex items-center justify-center bg-blue-600 border-blue-600">
+                      <Check size={10} className="text-white" />
+                    </div>
+                    <span className="text-[11px] font-medium truncate">{name}</span>
+                  </div>
                 ))}
-              </datalist>
+
+              {categoriesList?.filter((cat: any) => 
+                cat.name.toLowerCase().includes(newCategoryInput.toLowerCase())
+              ).length === 0 && selectedCategories.length === 0 && (
+                <div className="col-span-full py-4 text-center text-xs text-gray-400">
+                  Không tìm thấy chủ đề nào
+                </div>
+              )}
             </div>
           </div>
 
@@ -213,6 +318,16 @@ export default function AddBookmarkModal({
                 <Loader2 size={12} className="animate-spin" /> Đang lấy thông tin tự động...
               </p>
             )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-700">Ghi chú cá nhân</label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-black bg-gray-50/50 h-24 resize-none"
+              placeholder="Nhập ghi chú riêng cho bookmark này..."
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -279,6 +394,28 @@ export default function AddBookmarkModal({
           </div>
         </form>
       </div>
+
+      <AlertDialog open={showDuplicateAlert} onOpenChange={setShowDuplicateAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Phát hiện Bookmark trùng lặp</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hệ thống phát hiện có {duplicateCount} link bị trùng lặp. Bạn có muốn merge (gộp) link lại hay không? 
+              <br/><br/>
+              Việc này sẽ cập nhật lại ngày lưu mới nhất và gộp thẻ/thư mục.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDuplicateAlert(false)}>Huỷ</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowDuplicateAlert(false);
+              submitData(true);
+            }}>
+              Đồng ý Merge
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

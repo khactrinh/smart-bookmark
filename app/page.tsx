@@ -23,8 +23,10 @@ export default function BookmarkApp() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [viewMode, setViewMode] = useState("grid");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(8);
   const [totalPages, setTotalPages] = useState(1);
   const [isRandom, setIsRandom] = useState(false);
+  const [randomTrigger, setRandomTrigger] = useState(0);
   const [category, setCategory] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,7 +71,7 @@ export default function BookmarkApp() {
   const fetchBookmarks = async () => {
     if (!session) return;
 
-    let url = `/api/bookmarks?page=${page}&limit=12`;
+    let url = `/api/bookmarks?page=${page}&limit=${limit}`;
     if (category) url += `&category=${category}`;
     if (collectionId) url += `&collectionId=${collectionId}`;
     if (isRandom) url += `&random=true`;
@@ -136,7 +138,29 @@ export default function BookmarkApp() {
     if (status === "authenticated") {
       fetchBookmarks();
     }
-  }, [page, isRandom, category, collectionId, debouncedSearch, status]);
+  }, [page, limit, isRandom, randomTrigger, category, collectionId, debouncedSearch, status]);
+
+  // Xử lý phím mũi tên Trái/Phải để chuyển trang
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Không xử lý nếu đang gõ trong input hoặc textarea
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        setPage((prev) => Math.max(prev - 1, 1));
+      } else if (e.key === "ArrowRight") {
+        setPage((prev) => Math.min(prev + 1, totalPages));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [totalPages]);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -162,11 +186,11 @@ export default function BookmarkApp() {
 
   // Giao diện chính sau khi đăng nhập thành công
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans relative">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans relative">
       {isLoadingData && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm transition-all duration-300">
           <Loader2 className="animate-spin text-black mb-4" size={48} />
-          <p className="text-gray-700 font-semibold text-lg animate-pulse">Đang đồng bộ bookmarks...</p>
+          <p className="text-gray-700 font-semibold text-lg animate-pulse">Đang lấy danh sách bookmarks...</p>
         </div>
       )}
       {/* 1. Thanh công cụ và Header */}
@@ -177,11 +201,16 @@ export default function BookmarkApp() {
         category={category}
         setCategory={(cat: string) => { setCategory(cat); setCollectionId(null); }}
         isRandom={isRandom}
-        setIsRandom={setIsRandom}
+        setIsRandom={(val: boolean) => {
+          setIsRandom(val);
+          if (val) setRandomTrigger(prev => prev + 1);
+        }}
         viewMode={viewMode}
         setViewMode={setViewMode}
         setIsModalOpen={setIsModalOpen}
         setPage={setPage}
+        limit={limit}
+        setLimit={setLimit}
         onOpenManageCat={() => setIsManageCatOpen(true)}
         onOpenManageCollections={() => setIsManageCollOpen(true)}
         onReset={() => {
@@ -189,6 +218,7 @@ export default function BookmarkApp() {
           setCategory("");
           setSearchQuery("");
           setPage(1);
+          setIsRandom(false);
         }}
         categoriesList={categoriesList}
       />

@@ -4,6 +4,7 @@ import Bookmark from '@/models/Bookmark';
 import { fetchMetadata } from '@/lib/scraper';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import Category from '@/models/Category';
 
 // Middleware kiểm tra auth
 async function checkAuth(): Promise<string> {
@@ -24,21 +25,115 @@ export async function POST(req: Request) {
         const userEmail = await checkAuth();
         await connectDB();
 
-        const { url, category, tags, title, description, collectionIds } = await req.json();
+        const { url, category, tags, title, description, note, collectionIds, forceMerge } = await req.json();
 
-        // fallback metadata
-        const metadata = await fetchMetadata(url);
+        // Check for existing bookmarks with the same URL for this user
+        const existingBookmarks = await Bookmark.find({ url, userEmail });
 
-        const newBookmark = await Bookmark.create({
-            url,
-            category,
-            tags,
-            collectionIds: collectionIds || [],
-            title: title || metadata.title,
-            description: description || metadata.description,
-            image: metadata.image,
-            userEmail,
-        });
+        if (existingBookmarks.length > 0 && !forceMerge) {
+            return NextResponse.json(
+                { 
+                    success: false, 
+                    error: 'DUPLICATE_URL', 
+                    duplicateCount: existingBookmarks.length 
+                }, 
+                { status: 409 }
+            );
+        }
+
+        let newBookmark;
+
+        if (existingBookmarks.length > 0 && forceMerge) {
+            // Keep the first one, update it, and remove the others
+            const bookmarkToKeep = existingBookmarks[0];
+            const idsToDelete = existingBookmarks.slice(1).map(b => b._id);
+            
+            if (idsToDelete.length > 0) {
+                await Bookmark.deleteMany({ _id: { $in: idsToDelete } });
+            }
+
+            // Merge tags, collectionIds, and categories
+            const allTags = new Set<string>();
+            const allCollections = new Set<string>();
+            const allCategories = new Set<string>();
+            
+            existingBookmarks.forEach(b => {
+                if (Array.isArray(b.tags)) b.tags.forEach((t: any) => allTags.add(String(t)));
+                if (Array.isArray(b.collectionIds)) b.collectionIds.forEach((c: any) => allCollections.add(c.toString()));
+                if (Array.isArray(b.category)) {
+                    b.category.forEach((c: any) => {
+                        const catStr = typeof c === 'string' ? c : (c.type || String(c));
+                        allCategories.add(catStr);
+                    });
+                }
+                else if (b.category) allCategories.add(String(b.category));
+            });
+            if (Array.isArray(tags)) tags.forEach((t: string) => allTags.add(t));
+            if (Array.isArray(collectionIds)) collectionIds.forEach((c: string) => allCollections.add(c));
+            if (Array.isArray(category)) category.forEach((c: string) => allCategories.add(c));
+            else if (category && typeof category === "string") allCategories.add(category);
+            
+            const tagsArray = Array.from(allTags);
+            const collectionsArray = Array.from(allCollections);
+            const categoriesArray = Array.from(allCategories);
+            if (categoriesArray.length === 0) categoriesArray.push("Uncategorized");
+            
+            const now = new Date();
+            
+            // Use findByIdAndUpdate with overwriteImmutable: true to bypass Mongoose's immutable createdAt
+            const updatedBookmark = await Bookmark.findByIdAndUpdate(
+                bookmarkToKeep._id,
+                {
+                    $set: {
+                        tags: tagsArray,
+                        collectionIds: collectionsArray,
+                        category: categoriesArray,
+                        createdAt: now,
+                        updatedAt: now
+                    }
+                },
+                { new: true, overwriteImmutable: true }
+            );
+            
+            newBookmark = updatedBookmark || bookmarkToKeep;
+        } else {
+            // No duplicates, or it's the first time
+            // fallback metadata
+            const metadata = await fetchMetadata(url);
+
+            const categoryArray = Array.isArray(category) ? category : (category ? [category] : ["Uncategorized"]);
+            const tagsArray = Array.isArray(tags) ? tags : (tags ? [tags] : []);
+
+            newBookmark = await Bookmark.create({
+                url,
+                category: categoryArray,
+                tags: tagsArray,
+                collectionIds: collectionIds || [],
+                title: title || metadata.title,
+                description: description || metadata.description,
+                note: note || "",
+                image: metadata.image,
+                userEmail,
+            });
+        }
+
+        // Sync categories to Category collection (Non-blocking)
+        if (newBookmark && Array.isArray(newBookmark.category)) {
+            try {
+                const syncPromises = newBookmark.category
+                    .filter(catName => typeof catName === 'string' && catName.trim() !== "" && catName !== "Uncategorized")
+                    .map(async (catName: string) => {
+                        return Category.findOneAndUpdate(
+                            { name: catName.trim(), userEmail },
+                            { name: catName.trim(), userEmail },
+                            { upsert: true, new: true }
+                        );
+                    });
+                await Promise.all(syncPromises);
+            } catch (syncError) {
+                console.error("Category sync error (ignored):", syncError);
+            }
+        }
 
         return NextResponse.json({ success: true, data: newBookmark }, { status: 201 });
     } catch (error) {
@@ -77,7 +172,8 @@ export async function GET(req: Request) {
                 { title: { $regex: search, $options: 'i' } },
                 { description: { $regex: search, $options: 'i' } },
                 { url: { $regex: search, $options: 'i' } },
-                { tags: { $regex: search, $options: 'i' } }
+                { tags: { $regex: search, $options: 'i' } },
+                { category: { $regex: search, $options: 'i' } }
             ];
         }
 
