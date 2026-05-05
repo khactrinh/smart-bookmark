@@ -75,13 +75,13 @@ export default function AddBookmarkModal({
         setCustomDescription(editingBookmark.description || "");
         setNote(editingBookmark.note || "");
         const initialCats = Array.isArray(editingBookmark.category)
-        ? editingBookmark.category.map(c => typeof c === 'string' ? c : (c as any).type || c)
+        ? editingBookmark.category.map((c: any) => typeof c === 'string' ? c : (c as any).type || c)
         : typeof editingBookmark.category === 'string'
         ? [editingBookmark.category]
         : [];
       setSelectedCategories(initialCats as string[]);  setNewCategoryInput("");
       const initialTags = Array.isArray(editingBookmark.tags)
-        ? editingBookmark.tags.map(t => typeof t === 'string' ? t : (t as any).type || String(t))
+        ? editingBookmark.tags.map((t: any) => typeof t === 'string' ? t : (t as any).type || String(t))
         : [];
       setNewTags(initialTags.join(", "));
         setSelectedCollections(editingBookmark.collectionIds || []);

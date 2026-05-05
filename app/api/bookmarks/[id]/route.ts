@@ -163,13 +163,14 @@ export async function PUT(
 
         // Sync categories to Category collection (Non-blocking)
         if (updated.category && Array.isArray(updated.category)) {
+            const userEmail = session.user.email;
             try {
                 const syncPromises = updated.category
                     .filter(catName => typeof catName === 'string' && catName.trim() !== "" && catName !== "Uncategorized")
                     .map(async (catName: string) => {
                         return Category.findOneAndUpdate(
-                            { name: catName.trim(), userEmail: session.user.email },
-                            { name: catName.trim(), userEmail: session.user.email },
+                            { name: catName.trim(), userEmail },
+                            { name: catName.trim(), userEmail },
                             { upsert: true, new: true }
                         );
                     });
